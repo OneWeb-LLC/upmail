@@ -22,6 +22,10 @@ import {
   persistExecutedActionOutcome,
 } from "@/utils/ai/executed-action-outcome";
 import { isSendingActionType } from "@/utils/ai/sending-action";
+import {
+  mapSendingActionToDraft,
+  resolveAutomatedSendingDecision,
+} from "@/utils/oweb/autonomous-send";
 
 const MODULE = "ai-execute-act";
 
@@ -78,17 +82,37 @@ export async function executeAct({
         continue;
       }
 
+      let actionForExecution = action;
+
       if (isSendingActionType(action.type)) {
-        await prisma.executedAction.update({
-          where: { id: action.id },
-          data: { executionStartedAt: new Date() },
+        const sendDecision = await resolveAutomatedSendingDecision({
+          userId: emailAccount.userId,
+          actionType: action.type,
+          ruleId: executedRule.ruleId,
         });
+
+        if (sendDecision.mode === "defer_to_draft") {
+          log.info("Deferring automated outbound action to draft for review", {
+            actionId: action.id,
+            originalType: action.type,
+            reason: sendDecision.reason,
+          });
+          actionForExecution = {
+            ...action,
+            type: mapSendingActionToDraft(action.type),
+          };
+        } else {
+          await prisma.executedAction.update({
+            where: { id: action.id },
+            data: { executionStartedAt: new Date() },
+          });
+        }
       }
 
       const actionResult = await runActionFunction({
         client,
         email: message,
-        action,
+        action: actionForExecution,
         emailAccount,
         executedRule,
         logger: log,
@@ -128,7 +152,7 @@ export async function executeAct({
       }
 
       const draftId =
-        action.type === ActionType.DRAFT_EMAIL
+        actionForExecution.type === ActionType.DRAFT_EMAIL
           ? getDraftId(actionResult)
           : null;
 
@@ -138,7 +162,7 @@ export async function executeAct({
           draftId,
           logger,
         });
-      } else if (action.type === ActionType.DRAFT_EMAIL) {
+      } else if (actionForExecution.type === ActionType.DRAFT_EMAIL) {
         log.warn("Draft action completed without a draft ID", {
           actionId: action.id,
         });
