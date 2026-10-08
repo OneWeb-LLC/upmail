@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LoginForm } from "@/app/(landing)/login/LoginForm";
+import { OwebNativeLoginForm } from "@/app/(landing)/login/OwebNativeLoginForm";
 import {
   getEmailAlreadyLinkedDescription,
   getRequiresReconsentDescription,
@@ -11,6 +12,7 @@ import { env } from "@/env";
 import { auth } from "@/utils/auth";
 import { isGoogleOauthEmulationEnabled } from "@/utils/gmail/oauth";
 import { getEnabledLoginProviders } from "@/utils/oauth/login-providers";
+import { isOwebSatelliteEnabled } from "@/utils/oweb/config";
 import { AlertBasic } from "@/components/Alert";
 import { Button } from "@/components/ui/button";
 import { WELCOME_PATH } from "@/utils/config";
@@ -43,6 +45,7 @@ export default async function AuthenticationPage(props: {
   }
 
   const enabledProviders = Array.from(getEnabledLoginProviders());
+  const owebSatellite = isOwebSatelliteEnabled();
 
   return (
     <div className="flex min-h-screen flex-col justify-center py-10 text-foreground">
@@ -55,10 +58,14 @@ export default async function AuthenticationPage(props: {
         </div>
         <div className="mt-4">
           <Suspense>
-            <LoginForm
-              enabledProviders={enabledProviders}
-              useGoogleOauthEmulator={isGoogleOauthEmulationEnabled()}
-            />
+            {owebSatellite ? (
+              <OwebNativeLoginForm />
+            ) : (
+              <LoginForm
+                enabledProviders={enabledProviders}
+                useGoogleOauthEmulator={isGoogleOauthEmulationEnabled()}
+              />
+            )}
           </Suspense>
         </div>
 
