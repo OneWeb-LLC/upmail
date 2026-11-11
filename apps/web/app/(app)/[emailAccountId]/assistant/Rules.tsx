@@ -151,6 +151,7 @@ export function Rules({
           enabled: false,
           runOnThreads: false,
           automate: true,
+          autonomousSendEnabled: false,
           actions: getDefaultActions(systemType, provider).map((action) => ({
             ...action,
             emailAccountId,
