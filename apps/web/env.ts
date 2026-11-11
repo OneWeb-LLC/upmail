@@ -54,8 +54,20 @@ const parsedEnv = createEnv({
     NODE_ENV: z.enum(["development", "production", "test"]),
     MAIL_UPLOAD_DIR: z.string().min(1).optional(),
     INBOX_ZERO_ENV_FILE: z.string().optional(),
-    DATABASE_URL: z.string().url(),
-    DATABASE_URL_UNPOOLED: z.string().url().optional(),
+    DATABASE_URL: z.preprocess(
+      (value) =>
+        optionalEnvValue(value) ??
+        process.env.POSTGRES_PRISMA_URL ??
+        process.env.POSTGRES_URL,
+      z.string().url(),
+    ),
+    DATABASE_URL_UNPOOLED: z.preprocess(
+      (value) =>
+        optionalEnvValue(value) ??
+        process.env.POSTGRES_URL_NON_POOLING ??
+        process.env.DIRECT_URL,
+      z.string().url().optional(),
+    ),
     PREVIEW_DATABASE_URL: z.string().url().optional(),
     PREVIEW_DATABASE_URL_UNPOOLED: z.preprocess(
       (value) => value ?? process.env.DATABASE_URL_UNPOOLED,
