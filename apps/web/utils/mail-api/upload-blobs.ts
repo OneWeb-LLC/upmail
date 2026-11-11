@@ -15,7 +15,8 @@ import {
 
 export function mailUploadRoot() {
   return resolve(
-    env.MAIL_UPLOAD_DIR ?? join(tmpdir(), "inbox-zero-mail-uploads"),
+    /* turbopackIgnore: true */ env.MAIL_UPLOAD_DIR ??
+      join(tmpdir(), "inbox-zero-mail-uploads"),
   );
 }
 

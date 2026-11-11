@@ -179,7 +179,10 @@ export function Rules({
 
     const userRules = existingRules.filter((rule) => !rule.systemType);
 
-    return sortRulesByCanonicalOrder([...systemRulePlaceholders, ...userRules]);
+    return sortRulesByCanonicalOrder([
+      ...systemRulePlaceholders,
+      ...userRules,
+    ]) as RulesResponse;
   }, [data, emailAccountId, provider]);
 
   const hasRules = !!rules?.length;
