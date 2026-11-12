@@ -54,8 +54,20 @@ const parsedEnv = createEnv({
     NODE_ENV: z.enum(["development", "production", "test"]),
     MAIL_UPLOAD_DIR: z.string().min(1).optional(),
     INBOX_ZERO_ENV_FILE: z.string().optional(),
-    DATABASE_URL: z.string().url(),
-    DATABASE_URL_UNPOOLED: z.string().url().optional(),
+    DATABASE_URL: z.preprocess(
+      (value) =>
+        optionalEnvValue(value) ??
+        process.env.POSTGRES_PRISMA_URL ??
+        process.env.POSTGRES_URL,
+      z.string().url(),
+    ),
+    DATABASE_URL_UNPOOLED: z.preprocess(
+      (value) =>
+        optionalEnvValue(value) ??
+        process.env.POSTGRES_URL_NON_POOLING ??
+        process.env.DIRECT_URL,
+      z.string().url().optional(),
+    ),
     PREVIEW_DATABASE_URL: z.string().url().optional(),
     PREVIEW_DATABASE_URL_UNPOOLED: z.preprocess(
       (value) => value ?? process.env.DATABASE_URL_UNPOOLED,
@@ -409,6 +421,11 @@ const parsedEnv = createEnv({
     APP_REVIEW_DEMO_ENABLED: booleanString.optional().default(false),
     APP_REVIEW_DEMO_ACCOUNTS: z.string().optional(),
     SSO_LOGIN_ENABLED: booleanString.optional().default(false),
+
+    // OWeb constellation satellite (Upmail on One OS)
+    OWEB_SATELLITE_ENABLED: booleanString.optional().default(false),
+    SUPABASE_URL: z.string().url().optional(),
+    OWEB_CONTROL_PLANE_URL: z.string().url().optional(),
     UNSUBSCRIBE_WORKER_URL: z
       .url()
       .refine((value) => new URL(value).protocol === "https:")
@@ -449,6 +466,10 @@ const parsedEnv = createEnv({
     NEXT_PUBLIC_POSTHOG_API_HOST: z.string().optional(),
     NEXT_PUBLIC_POSTHOG_ONBOARDING_SURVEY_ID: z.string().optional(),
     NEXT_PUBLIC_BASE_URL: z.string(),
+    NEXT_PUBLIC_OWEB_CONTROL_PLANE_URL: z.string().url().optional(),
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+    NEXT_PUBLIC_SUPABASE_PROJECT_ID: z.string().optional(),
     NEXT_PUBLIC_IMAGE_PROXY_BASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_IMAGE_PROXY_USE_APP_ROUTE: booleanString
       .optional()
@@ -562,6 +583,13 @@ const parsedEnv = createEnv({
     NEXT_PUBLIC_POSTHOG_ONBOARDING_SURVEY_ID:
       process.env.NEXT_PUBLIC_POSTHOG_ONBOARDING_SURVEY_ID,
     NEXT_PUBLIC_BASE_URL: getBaseUrl(),
+    NEXT_PUBLIC_OWEB_CONTROL_PLANE_URL:
+      process.env.NEXT_PUBLIC_OWEB_CONTROL_PLANE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_PROJECT_ID:
+      process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID,
     NEXT_PUBLIC_IMAGE_PROXY_BASE_URL:
       process.env.NEXT_PUBLIC_IMAGE_PROXY_BASE_URL,
     NEXT_PUBLIC_IMAGE_PROXY_USE_APP_ROUTE:

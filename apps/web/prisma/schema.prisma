@@ -66,6 +66,8 @@ model User {
   email         String    @unique
   emailVerified Boolean?  @default(false)
   image         String?
+  /// One OS Supabase Auth user id (UUID) when running as an OWeb satellite.
+  supabaseAuthId String?  @unique @db.Uuid
   accounts      Account[]
   sessions      Session[]
 
@@ -128,6 +130,29 @@ model User {
   scimUsers              ScimUser[]
   scimProjectionGrants   ScimProjectionGrant[]
   scimIdentityLinks      ScimIdentityLink[]
+  upmailProfile          UpmailProfile?
+}
+
+/// Local OneID / workspace projection for Upmail when integrated with OWeb.
+model UpmailProfile {
+  userId                String   @id
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oneIdHandle           String?
+  activeOwebWorkspaceId String?  @db.Uuid
+  autonomousSendEnabled Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+/// Maps upstream EmailAccount rows to canonical OWeb workspace tenancy.
+model UpmailEmailAccountWorkspace {
+  id              String       @id @default(cuid())
+  owebWorkspaceId String       @db.Uuid
+  emailAccountId  String       @unique
+  emailAccount    EmailAccount @relation(fields: [emailAccountId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now())
+
+  @@index([owebWorkspaceId])
 }
 
 enum ApiKeyScope {
@@ -238,6 +263,8 @@ model EmailAccount {
   scheduledEmails     ScheduledEmail[]
   responseTimes       ResponseTime[]
   actions             Action[]
+
+  upmailWorkspaceBinding UpmailEmailAccountWorkspace?
 
   members                Member[]
   invitations            Invitation[]
@@ -689,6 +716,8 @@ model Rule {
   actions           Action[]
   attachmentSources AttachmentSource[]
   enabled           Boolean            @default(true)
+  /// When true (OWeb satellite), automated REPLY/SEND_EMAIL/FORWARD may send without review.
+  autonomousSendEnabled Boolean        @default(false)
   automate          Boolean            @default(true) // @deprecated - No longer used. All rules are now automated. Kept for historical data only.
   runOnThreads      Boolean            @default(false) // if disabled, only runs on individual emails
 

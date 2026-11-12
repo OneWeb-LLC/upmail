@@ -151,6 +151,7 @@ export function Rules({
           enabled: false,
           runOnThreads: false,
           automate: true,
+          autonomousSendEnabled: false,
           actions: getDefaultActions(systemType, provider).map((action) => ({
             ...action,
             emailAccountId,
@@ -179,7 +180,10 @@ export function Rules({
 
     const userRules = existingRules.filter((rule) => !rule.systemType);
 
-    return sortRulesByCanonicalOrder([...systemRulePlaceholders, ...userRules]);
+    return sortRulesByCanonicalOrder([
+      ...systemRulePlaceholders,
+      ...userRules,
+    ]) as RulesResponse;
   }, [data, emailAccountId, provider]);
 
   const hasRules = !!rules?.length;
